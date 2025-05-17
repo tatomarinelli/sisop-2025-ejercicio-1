@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "../include/combo.h"
 #include "../include/menu.h"
 
 
-Combo combos[MAX_COMBOS]; // Define the shared array of combos
+
+//Combo combos[MAX_COMBOS]; // Define the shared array of combos
 int comboCount = 0;       // Define the shared counter for the number of combos
 pthread_mutex_t comboMutex = PTHREAD_MUTEX_INITIALIZER; // Define the mutex for thread safety
 
@@ -49,6 +51,31 @@ int IsQueueFull() {
     return comboQueue.size == QUEUE_MAX;
 }
 
+void ReportPendingCombos() {
+    pthread_mutex_lock(&comboMutex);
+    printf("=== Reporte de Combos Pendientes ===\n");
+    for (int i = 0; i < comboQueue.size; i++) {
+        int index = (comboQueue.front + i) % QUEUE_MAX;
+        if (comboQueue.queue[index].status == PENDIENTE) {
+            printf("ID: %d | Tipo: %s\n", comboQueue.queue[index].id, GetComboTypeString(comboQueue.queue[index].type));
+        }
+    }
+    pthread_mutex_unlock(&comboMutex);
+    printf("====================\n");
+}
+
+void ReportCombosByStatus(ComboStatus status) {
+    pthread_mutex_lock(&comboMutex);
+    printf("=== Reporte de Combos %s ===\n", GetComboStatusString(status));
+    for (int i = 0; i < QUEUE_MAX; i++) {
+        if (comboQueue.queue[i].id != 0 && ((int)status == -1 || comboQueue.queue[i].status == status)) {
+            printf("ID: %d | Tipo: %s | Estado: %s\n", comboQueue.queue[i].id, GetComboTypeString(comboQueue.queue[i].type), GetComboStatusString(comboQueue.queue[i].status));
+        }
+    }
+    pthread_mutex_unlock(&comboMutex);
+    printf("====================\n");
+}
+
 void CreateComboOrder(int id) {
     if (id < 1 || id > 3) {
         printf("ID de combo no válido.\n");
@@ -64,12 +91,27 @@ void CreateComboOrder(int id) {
     switch (id) {
         case 1:
             combo->type = SIMPLE;
+            combo->preparationTime = 5;
+            combo->ingredients.meatAndCheese = 1;
+            combo->ingredients.lettuce = 0;
+            combo->ingredients.tomato = 0;
+            combo->ingredients.bread = 2;
             break;
         case 2:
             combo->type = DOBLE;
+            combo->preparationTime = 7;
+            combo->ingredients.meatAndCheese = 2;
+            combo->ingredients.lettuce = 0;
+            combo->ingredients.tomato = 0;
+            combo->ingredients.bread = 2;
             break;
         case 3:
             combo->type = COMPLETO;
+            combo->preparationTime = 1;
+            combo->ingredients.meatAndCheese = 2;
+            combo->ingredients.lettuce = 1;
+            combo->ingredients.tomato = 1;
+            combo->ingredients.bread = 2;
             break;
         default:
             printf("Opción no válida.\n");
@@ -91,9 +133,10 @@ void CreateComboOrder(int id) {
         printf("\n=== Orden Creada ===\n");
         printf("ID: %d | Tipo: %s | Estado: %s\n", combo->id, GetComboTypeString(combo->type), GetComboStatusString(combo->status));
         printf("====================\n\n");
-        printf("Presione Enter para continuar...\n");
-        getchar();
-        getchar();
+        sleep(0.2);
+        //printf("Presione Enter para continuar...\n");
+        //getchar();
+        //getchar();
     }
     
     pthread_mutex_unlock(&comboMutex);
@@ -106,34 +149,22 @@ void OrdersReport(int option)
     MENU_CLEAN_SCREEN
     switch (option) {
         case 1:
-            printf("=== Combos Pendientes ===\n");
-            for (int i = 0; i < comboCount; i++) {
-                if (combos[i].status == PENDIENTE) {
-                    printf("ID: %d | Tipo: %s\n", combos[i].id, GetComboTypeString(combos[i].type));
-                }
-            }
+            ReportCombosByStatus(PENDIENTE);
             break;
         case 2:
-            printf("=== Combos En Proceso ===\n");
-            for (int i = 0; i < comboCount; i++) {
-                if (combos[i].status == EN_PROCESO) {
-                    printf("ID: %d | Tipo: %s\n", combos[i].id, GetComboTypeString(combos[i].type));
-                }
-            }
+            ReportCombosByStatus(EN_PROCESO);
             break;
         case 3:
             printf("=== Combos Terminados ===\n");
-            for (int i = 0; i < comboCount; i++) {
+
+            /*for (int i = 0; i < comboCount; i++) {
                 if (combos[i].status == TERMINADO) {
                     printf("ID: %d | Tipo: %s\n", combos[i].id, GetComboTypeString(combos[i].type));
                 }
-            }
+            }*/
             break;
         case 4:
-            printf("=== Todas las Ordenes ===\n");
-            for (int i = 0; i < comboCount; i++) {
-                printf("ID: %d | Tipo: %s | Estado: %s\n", combos[i].id, GetComboTypeString(combos[i].type), GetComboStatusString(combos[i].status));
-            }
+            ReportCombosByStatus(-1);
             break;
         default:
             printf("Opción no válida.\n");
@@ -157,20 +188,9 @@ const char* GetComboStatusString(ComboStatus status) {
         case PENDIENTE: return "Pendiente";
         case EN_PROCESO: return "En Proceso";
         case TERMINADO: return "Terminado";
-        default: return "Desconocido";
+        default: return "Todos";
     }
 }
 
-void LogCombo(Combo *combo) {
-    FILE *logFile = fopen("combo_log.txt", "a"); // Open the log file in append mode
-    if (logFile != NULL) {
-        fprintf(logFile, "Combo - ID: %d, Tipo: %s, Estado: %s\n",
-                combo->id,
-                GetComboTypeString(combo->type),
-                GetComboStatusString(combo->status));
-        fclose(logFile); // Close the file
-    } else {
-        printf("Error al abrir el archivo de registro.\n");
-    }
-}
+
 

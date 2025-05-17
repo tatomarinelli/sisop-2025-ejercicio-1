@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "../include/menu.h"
-#include "../include/combo.h"
+#include "../include/resources.h"
 
 void title() {
     printf("\033[H\033[J");
@@ -34,12 +34,22 @@ void comboMenuStr() {
     printf("Su opción: ");
 }
 
+void resourceMonitorMenuStr() {
+    title();
+    printf("1. Mostrar ingredientes\n");
+    printf(SEP);
+    printf("3. Volver\n");
+    printf(SEP);
+    printf("Su opción: ");
+}
+
 void mainMenuStr() {
     title();
     printf("1. Crear Combo\n");
     printf("2. Mostrar Combos\n");
+    printf("3. Monitor de Recursos\n");
     printf(SEP);
-    printf("3. Salir\n");
+    printf("4. Salir\n");
     printf(SEP);
     printf("Su opción: ");
 }
@@ -71,8 +81,11 @@ void showStatusMenu() {
     OrdersReport(option);
 }
 
+void showResourceMonitorMenu() {
+    ResourceMonitorReport();
+}
+
 int RenderMenu() {
-    title();
     mainMenuStr();
     int option;
     scanf("%d", &option);
@@ -85,6 +98,9 @@ int RenderMenu() {
             showStatusMenu();
             break;
         case 3:
+            showResourceMonitorMenu();
+            break;
+        case 4:
             printf("Saliendo del programa.\n");
             return -1;
             break;
@@ -98,8 +114,10 @@ int RenderMenu() {
 
 void WaitForUserInput() {
     printf("Presione Enter para continuar...");
-    getchar(); // Clear the input buffer
-    getchar(); // Wait for user to press Enter
+    //fflush(stdout);
+    getchar();
+    getchar();
+    while (getchar() != '\n'); // Consume all characters until a newline
 }
 
 

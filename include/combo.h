@@ -1,8 +1,4 @@
-#ifndef COMBO_H
-#define COMBO_H
-
 #include <pthread.h>
-#endif // COMBO_H
 
 #define MAX_COMBOS 100
 
@@ -18,10 +14,20 @@ typedef enum {
     TERMINADO
 } ComboStatus;
 
+
+typedef struct {
+    int meatAndCheese;
+    int lettuce;
+    int tomato;
+    int bread;
+} Ingredients;
+
 typedef struct {
     int id;
     ComboType type;
     ComboStatus status;
+    int preparationTime;
+    Ingredients ingredients;
 } Combo;
 
 #define QUEUE_MAX 10 // Maximum number of combos in the queue
@@ -46,8 +52,6 @@ int EnqueueCombo(Combo* combo);
 int DequeueCombo(Combo* combo);
 int IsQueueEmpty();
 int IsQueueFull();
-
-void LogCombo(Combo* combo);
 
 const char* GetComboTypeString(ComboType type);
 const char* GetComboStatusString(ComboStatus status);
